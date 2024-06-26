@@ -1,0 +1,36 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="container-fluid">
+    @for (int i = 0; i < 4; i++)
+    {
+        <div class="row mb-4">
+            @for (int j = 1; j <= 3; j++)
+            {
+                int tableId = i * 3 + j;
+                <div class="col-md-4">
+                    <div class="card" id="table-@tableId">
+                        <div class="card-body">
+                            <h5 class="card-title">테이블 @tableId</h5>
+                            <p class="card-text" id="status-@tableId">상태: 비활성</p>
+                            <button class="btn btn-primary" onclick="forceStartGame(@tableId)">게임 시작</button>
+                            <button class="btn btn-danger" onclick="forceEndGame(@tableId)">게임 종료</button>
+                            <div class="mt-3">
+                                <h6>게임 목록:</h6>
+                                <ul id="game-list-@tableId" class="list-group">
+                                    <!-- 게임 목록이 여기에 추가됩니다 -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.js"></script>
+    <script src="~/js/tableStatus.js"></script>
+}

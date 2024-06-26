@@ -1,0 +1,28 @@
+@model DanggooManager.Models.Settings
+
+@{
+    ViewData["Title"] = "Fee Settings";
+}
+
+<h2>Fee Settings</h2>
+
+<form asp-action="Update">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="Id" />
+    <div class="form-group">
+        <label asp-for="FeePerMinute" class="control-label"></label>
+        <input asp-for="FeePerMinute" class="form-control" />
+        <span asp-validation-for="FeePerMinute" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <input type="submit" value="Update" class="btn btn-primary" />
+    </div>
+</form>
+
+<div>
+    <a asp-controller="Home" asp-action="Index">Back to Home</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
