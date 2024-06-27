@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using DanggooManager.Data;
 using DanggooManager.Models;
+using System.Text.Json;
 
 namespace DanggooManager.Controllers
 {
@@ -153,5 +154,87 @@ namespace DanggooManager.Controllers
         {
             return _context.Accounts.Any(e => e.Id == id);
         }
+
+        // AccountsController에 추가
+        public class RegisterResult
+        {
+            public bool Success { get; set; }
+            public string Message { get; set; }
+        }
+
+        [HttpPost]
+        public async Task<RegisterResult> Register(string firstName, string lastName, string username)
+        {
+            if (await _context.Accounts.AnyAsync(a => a.Username == username))
+            {
+                return new RegisterResult { Success = false, Message = "Username already exists" };
+            }
+
+            var account = new Account
+            {
+                FirstName = firstName,
+                LastName = lastName,
+                Username = username,
+                Password = "defaultPassword", // 보안상 좋지 않으므로 나중에 수정 필요
+                Average = 0,
+                TotalPlay = 0,
+                TotalScore = 0
+            };
+
+            _context.Accounts.Add(account);
+            await _context.SaveChangesAsync();
+
+            return new RegisterResult { Success = true, Message = "Registration successful" };
+        }
+
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<AccountDto>>> SearchPlayers(string query)
+        {
+            Console.WriteLine($"Searching players with query: {query}");
+
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                var allAccounts = await _context.Accounts
+                    .Select(a => new AccountDto
+                    {
+                        Id = a.Id,
+                        FirstName = a.FirstName,
+                        LastName = a.LastName,
+                        Username = a.Username
+                    })
+                    .ToListAsync();
+                Console.WriteLine($"Returning all accounts. Count: {allAccounts.Count}");
+                return allAccounts;
+            }
+
+            query = query.ToLower(); // 검색어를 소문자로 변환
+
+            var results = await _context.Accounts
+                .Where(a => a.FirstName.ToLower().Contains(query)
+                         || a.LastName.ToLower().Contains(query)
+                         || a.Username.ToLower().Contains(query))
+                .Select(a => new AccountDto
+                {
+                    Id = a.Id,
+                    FirstName = a.FirstName,
+                    LastName = a.LastName,
+                    Username = a.Username
+                })
+                .ToListAsync();
+
+            Console.WriteLine($"Search results count: {results.Count}");
+            return results;
+        }
     }
+
+    public class AccountDto
+    {
+        public int Id { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Username { get; set; }
+    }
+
+
+
 }

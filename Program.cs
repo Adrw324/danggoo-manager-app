@@ -25,6 +25,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // TableHub를 싱글톤으로 등록
 builder.Services.AddSingleton<TableHub>();
 builder.Services.AddScoped<GamesController>();
+builder.Services.AddScoped<AccountsController>();
+
 
 // CORS 설정
 builder.Services.AddCors(options =>
@@ -126,8 +128,8 @@ async Task HandleWebSocketConnection(HttpContext context, WebSocket webSocket, s
             {
                 var message = System.Text.Encoding.UTF8.GetString(buffer, 0, result.Count);
                 var jsonMessage = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(message);
-                
-               switch (jsonMessage["type"].GetString())
+
+                switch (jsonMessage["type"].GetString())
                 {
                     case "updateTableStatus":
                         var isActive = jsonMessage["isActive"].GetBoolean();
@@ -145,6 +147,27 @@ async Task HandleWebSocketConnection(HttpContext context, WebSocket webSocket, s
                         break;
                     case "ForceEndGame":
                         await WebSocketManager.SendMessageAsync(parsedTableId, JsonSerializer.Serialize(new { type = "ForceEndGame", tableId = parsedTableId }));
+                        break;
+                    case "register":
+                        var firstName = jsonMessage["firstName"].GetString();
+                        var lastName = jsonMessage["lastName"].GetString();
+                        var username = jsonMessage["username"].GetString();
+                        using (var scope = app.Services.CreateScope())
+                        {
+                            var accountsController = scope.ServiceProvider.GetRequiredService<AccountsController>();
+                            var registerResult = await accountsController.Register(firstName, lastName, username);
+                            await WebSocketManager.SendMessageAsync(parsedTableId, JsonSerializer.Serialize(new { type = "registerResult", success = registerResult.Success, message = registerResult.Message }));
+                        }
+                        break;
+                    case "searchPlayers":
+                        var searchQuery = jsonMessage["query"].GetString();
+                        using (var scope = app.Services.CreateScope())
+                        {
+                            var accountsController = scope.ServiceProvider.GetRequiredService<AccountsController>();
+                            var players = await accountsController.SearchPlayers(searchQuery);
+                            var playerList = new { type = "playerList", players = players.Value };
+                            await WebSocketManager.SendMessageAsync(parsedTableId, JsonSerializer.Serialize(playerList));
+                        }
                         break;
                 }
                 await hubContext.Clients.All.SendAsync("ReceiveWebSocketMessage", tableId, message);

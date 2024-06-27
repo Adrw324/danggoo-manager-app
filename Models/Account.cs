@@ -4,27 +4,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace DanggooManager.Models
 {
     public class Account
-    {
-        [Key]
-        public int Id { get; set; }
-
-        [Required]
-        [StringLength(100)]
-        public string Name { get; set; }
-
-        [Required]
-        [StringLength(50)]
-        public string Username { get; set; }
-
-        [Required]
-        [StringLength(100)]
-        public string Password { get; set; }
-
-        [Column(TypeName = "decimal(18, 2)")]
-        public decimal Average { get; set; }
-
-        public int TotalPlay { get; set; }
-
-        public int TotalScore { get; set; }
-    }
+{
+    public int Id { get; set; }
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    public string Username { get; set; }
+    public string Password { get; set; }
+    public double Average { get; set; }
+    public int TotalPlay { get; set; }
+    public int TotalScore { get; set; }
+}
 }
