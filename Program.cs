@@ -169,6 +169,20 @@ async Task HandleWebSocketConnection(HttpContext context, WebSocket webSocket, s
                             await WebSocketManager.SendMessageAsync(parsedTableId, JsonSerializer.Serialize(playerList));
                         }
                         break;
+                    case "updatePlayerStats":
+                        using (var scope = app.Services.CreateScope())
+                        {
+                            var accountsController = scope.ServiceProvider.GetRequiredService<AccountsController>();
+                            var dto = new PlayerStatsUpdateDto
+                            {
+                                PlayerId = jsonMessage["playerId"].GetInt32(),
+                                NewAverage = jsonMessage["newAverage"].GetDouble(),
+                                NewTotalPlay = jsonMessage["newTotalPlay"].GetInt32(),
+                                NewTotalScore = jsonMessage["newTotalScore"].GetInt32()
+                            };
+                            await accountsController.UpdatePlayerStats(dto);
+                        }
+                        break;
                 }
                 await hubContext.Clients.All.SendAsync("ReceiveWebSocketMessage", tableId, message);
             }

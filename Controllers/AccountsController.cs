@@ -200,11 +200,20 @@ namespace DanggooManager.Controllers
                         Id = a.Id,
                         FirstName = a.FirstName,
                         LastName = a.LastName,
-                        Username = a.Username
+                        Username = a.Username,
+                        Average = a.Average,
+                        TotalPlay = a.TotalPlay,
+                        TotalScore= a.TotalScore,
                     })
                     .ToListAsync();
                 Console.WriteLine($"Returning all accounts. Count: {allAccounts.Count}");
+                
+                foreach (var account in allAccounts)
+                {
+                    Console.WriteLine($"AAAId: {account.Id}, FirstName: {account.FirstName}, LastName: {account.LastName}, Username: {account.Username}, Average: {account.Average}, TotalPlay: {account.TotalPlay}");
+                }
                 return allAccounts;
+
             }
 
             query = query.ToLower(); // 검색어를 소문자로 변환
@@ -218,14 +227,42 @@ namespace DanggooManager.Controllers
                     Id = a.Id,
                     FirstName = a.FirstName,
                     LastName = a.LastName,
-                    Username = a.Username
+                    Username = a.Username,
+                    Average = a.Average,
+                    TotalPlay = a.TotalPlay,
+                    TotalScore= a.TotalScore
                 })
                 .ToListAsync();
-
             Console.WriteLine($"Search results count: {results.Count}");
+
+            foreach (var account in results)
+            {
+                Console.WriteLine($"AAAId: {account.Id}, FirstName: {account.FirstName}, LastName: {account.LastName}, Username: {account.Username}, Average: {account.Average}, TotalPlay: {account.TotalPlay}");
+            }
             return results;
         }
+
+        [HttpPost("updateStats")]
+        public async Task<IActionResult> UpdatePlayerStats([FromBody] PlayerStatsUpdateDto dto)
+        {
+            var player = await _context.Accounts.FindAsync(dto.PlayerId);
+            if (player == null)
+            {
+                return NotFound();
+            }
+
+            player.Average = dto.NewAverage;
+            player.TotalPlay = dto.NewTotalPlay;
+            player.TotalScore = dto.NewTotalScore;
+
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+
     }
+
+
 
     public class AccountDto
     {
@@ -233,6 +270,20 @@ namespace DanggooManager.Controllers
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Username { get; set; }
+
+        public double Average { get; set; }
+
+        public int TotalPlay { get; set; }
+
+        public int TotalScore { get; set; }
+    }
+
+    public class PlayerStatsUpdateDto
+    {
+        public int PlayerId { get; set; }
+        public double NewAverage { get; set; }
+        public int NewTotalPlay { get; set; }
+        public int NewTotalScore { get; set; }
     }
 
 
