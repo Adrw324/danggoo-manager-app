@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DanggooManager")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+95576594635ac1d5f346a5b59a32a9fc37a41461")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b903c2c0b86a82d173ae4f0395eab022030f2e8e")]
 [assembly: System.Reflection.AssemblyProductAttribute("DanggooManager")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DanggooManager")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
