@@ -19,10 +19,42 @@ namespace DanggooManager.Controllers
             _context = context;
         }
 
-        // GET: Records
-        public async Task<IActionResult> Index()
+       // GET: Records
+        public async Task<IActionResult> Index(int? tableNum, int? year, int? month, DateTime? date)
         {
-            return View(await _context.Records.ToListAsync());
+            var records = from r in _context.Records
+                          select r;
+
+            if (tableNum.HasValue)
+            {
+                records = records.Where(r => r.Table_Num == tableNum.Value);
+            }
+
+            if (year.HasValue)
+            {
+                records = records.Where(r => r.Date.Year == year.Value);
+            }
+
+            if (month.HasValue)
+            {
+                records = records.Where(r => r.Date.Month == month.Value);
+            }
+
+            if (date.HasValue)
+            {
+                records = records.Where(r => r.Date.Date == date.Value.Date);
+            }
+
+            ViewBag.TableNumbers = await _context.Records.Select(r => r.Table_Num).Distinct().OrderBy(t => t).ToListAsync() ?? new List<int>();
+            ViewBag.Years = await _context.Records.Select(r => r.Date.Year).Distinct().OrderByDescending(y => y).ToListAsync() ?? new List<int>();
+            ViewBag.Months = Enumerable.Range(1, 12).ToList();
+            
+            var minDate = await _context.Records.MinAsync(r => r.Date);
+            var maxDate = await _context.Records.MaxAsync(r => r.Date);
+            ViewBag.MinDate = minDate.ToString("yyyy-MM-dd");
+            ViewBag.MaxDate = maxDate.ToString("yyyy-MM-dd");
+
+            return View(await records.OrderByDescending(r => r.Date).AsNoTracking().ToListAsync());
         }
 
         // GET: Records/Details/5
