@@ -331,7 +331,7 @@ namespace DanggooManager.Controllers
             var record = new Record
             {
                 Table_Num = game.Table_Num,
-                Date = game.Date,
+                Date = game.Start,
                 Start = game.Start,
                 End = game.End,
                 Playtime = game.Playtime,
@@ -376,7 +376,7 @@ namespace DanggooManager.Controllers
                 var record = new Record
                 {
                     Table_Num = game.Table_Num,
-                    Date = game.Date,
+                    Date = game.Start,
                     Start = game.Start,
                     End = game.End,
                     Playtime = game.Playtime,
@@ -404,7 +404,7 @@ namespace DanggooManager.Controllers
             var record = new Record
             {
                 Table_Num = game.Table_Num,
-                Date = game.Date,
+                Date = game.Start,
                 Start = game.Start,
                 End = game.End,
                 Playtime = game.Playtime,
@@ -435,7 +435,7 @@ namespace DanggooManager.Controllers
                     var record = new Record
                     {
                         Table_Num = game.Table_Num,
-                        Date = game.Date,
+                        Date = game.Start,
                         Start = game.Start,
                         End = game.End,
                         Playtime = game.Playtime,

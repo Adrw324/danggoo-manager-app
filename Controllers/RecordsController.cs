@@ -45,16 +45,35 @@ namespace DanggooManager.Controllers
                 records = records.Where(r => r.Date.Date == date.Value.Date);
             }
 
-            ViewBag.TableNumbers = await _context.Records.Select(r => r.Table_Num).Distinct().OrderBy(t => t).ToListAsync() ?? new List<int>();
-            ViewBag.Years = await _context.Records.Select(r => r.Date.Year).Distinct().OrderByDescending(y => y).ToListAsync() ?? new List<int>();
-            ViewBag.Months = Enumerable.Range(1, 12).ToList();
-            
-            var minDate = await _context.Records.MinAsync(r => r.Date);
-            var maxDate = await _context.Records.MaxAsync(r => r.Date);
-            ViewBag.MinDate = minDate.ToString("yyyy-MM-dd");
-            ViewBag.MaxDate = maxDate.ToString("yyyy-MM-dd");
+           var recordsList = await records.ToListAsync();
 
-            return View(await records.OrderByDescending(r => r.Date).AsNoTracking().ToListAsync());
+           // Calculate total fee
+        decimal totalFee = recordsList.Sum(r => r.Fee);
+        ViewBag.TotalFee = totalFee;
+
+            // 레코드가 있는지 확인
+            if (recordsList.Any())
+            {
+                ViewBag.TableNumbers = await _context.Records.Select(r => r.Table_Num).Distinct().OrderBy(t => t).ToListAsync();
+                ViewBag.Years = await _context.Records.Select(r => r.Date.Year).Distinct().OrderByDescending(y => y).ToListAsync();
+                ViewBag.Months = Enumerable.Range(1, 12).ToList();
+                
+                var minDate = recordsList.Min(r => r.Date);
+                var maxDate = recordsList.Max(r => r.Date);
+                ViewBag.MinDate = minDate.ToString("yyyy-MM-dd");
+                ViewBag.MaxDate = maxDate.ToString("yyyy-MM-dd");
+            }
+            else
+            {
+                // 레코드가 없을 경우 기본값 설정
+                ViewBag.TableNumbers = new List<int>();
+                ViewBag.Years = new List<int>();
+                ViewBag.Months = Enumerable.Range(1, 12).ToList();
+                ViewBag.MinDate = DateTime.Today.ToString("yyyy-MM-dd");
+                ViewBag.MaxDate = DateTime.Today.ToString("yyyy-MM-dd");
+            }
+
+            return View(recordsList);
         }
 
         // GET: Records/Details/5
