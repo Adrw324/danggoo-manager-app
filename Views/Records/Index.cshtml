@@ -10,78 +10,108 @@
     <a asp-action="Create" class="btn btn-primary">Create New</a>
 </p>
 
-<form asp-action="Index" method="get" class="mb-3">
-    <div class="row">
-        <div class="col-md-2">
-            <label for="tableNum" class="sr-only">Table Number:</label>
-            <select name="tableNum" id="tableNum" class="form-control" asp-items="@(new SelectList(ViewBag.TableNumbers))">
-                <option value="">All Tables</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <label for="year" class="sr-only">Year:</label>
-            <select name="year" id="year" class="form-control" asp-items="@(new SelectList(ViewBag.Years))">
-                <option value="">All Years</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <label for="month" class="sr-only">Month:</label>
-            <select name="month" id="month" class="form-control" asp-items="@(new SelectList(ViewBag.Months))">
-                <option value="">All Months</option>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label for="date" class="sr-only">Date:</label>
-            <input type="date" name="date" id="date" class="form-control" min="@ViewBag.MinDate" max="@ViewBag.MaxDate">
-        </div>
-        <div class="col-md-3">
-            <button type="submit" class="btn btn-primary btn-block">Filter</button>
-        </div>
-    </div>
-</form>
+<form asp-action="Index" method="get" class="mb-3" id="filterForm">     
+    <div class="row">         
+        <div class="col-md-2">             
+    <label for="tableNum" class="sr-only">Table Number:</label>             
+    <select name="tableNum" id="tableNum" class="form-control" onchange="document.getElementById('filterForm').submit()">
+        <option value="0">All Tables</option>
+        @foreach (var table in ViewBag.TableNumbers)
+        {
+            if (Context.Request.Query["tableNum"].ToString() == table.ToString())
+            {
+                <option value="@table" selected>Table @table</option>
+            }
+            else
+            {
+                <option value="@table">Table @table</option>
+            }
+        }
+    </select>         
+</div>      
+        <div class="col-md-2">             
+    <label for="year" class="sr-only">Year:</label>             
+    <select name="year" id="year" class="form-control" onchange="document.getElementById('filterForm').submit()">
+        <option value="0">All Years</option>
+        @foreach (var year in ViewBag.Years)
+        {
+            if (Context.Request.Query["year"].ToString() == year.ToString())
+            {
+                <option value="@year" selected>@year</option>
+            }
+            else
+            {
+                <option value="@year">@year</option>
+            }
+        }
+    </select>        
+</div>
 
-@if (Model.Any())
-{
-    <div style="height: 500px; overflow-y: auto;">
-        <table class="table table-striped table-hover">
-            <thead class="thead-dark">
-                <tr>
-                    <th>@Html.DisplayNameFor(model => model.Table_Num)</th>
-                    <th>@Html.DisplayNameFor(model => model.Date)</th>
-                    <th>@Html.DisplayNameFor(model => model.Start)</th>
-                    <th>@Html.DisplayNameFor(model => model.End)</th>
-                    <th>@Html.DisplayNameFor(model => model.Playtime)</th>
-                    <th>@Html.DisplayNameFor(model => model.Fee)</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <td>@Html.DisplayFor(modelItem => item.Table_Num)</td>
-                        <td>@Html.DisplayFor(modelItem => item.Date)</td>
-                        <td>@Html.DisplayFor(modelItem => item.Start)</td>
-                        <td>@Html.DisplayFor(modelItem => item.End)</td>
-                        <td>@Html.DisplayFor(modelItem => item.Playtime)</td>
-                        <td>@Html.DisplayFor(modelItem => item.Fee)</td>
-                        <td>
-                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-primary">Edit</a>
-                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Details</a>
-                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="5" class="text-right"><strong>Total Fee:</strong></td>
-                    <td><strong>@ViewBag.TotalFee.ToString("C")</strong></td>
-                    <td></td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
+<div class="col-md-2">             
+    <label for="month" class="sr-only">Month:</label>             
+    <select name="month" id="month" class="form-control" onchange="document.getElementById('filterForm').submit()">
+        <option value="0">All Months</option>
+        @foreach (var month in ViewBag.Months)
+        {
+            if (Context.Request.Query["month"].ToString() == month.ToString())
+            {
+                <option value="@month" selected>@month</option>
+            }
+            else
+            {
+                <option value="@month">@month</option>
+            }
+        }
+    </select>         
+</div>
+        <div class="col-md-3">             
+            <label for="date" class="sr-only">Date:</label>             
+            <input type="date" name="date" id="date" class="form-control" min="@ViewBag.MinDate" max="@ViewBag.MaxDate" onchange="document.getElementById('filterForm').submit()" value="@Context.Request.Query["date"]">         
+        </div>     
+    </div> 
+</form>  
+
+@if (Model.Any()) {     
+    <div style="height: 500px; overflow-y: auto;">         
+        <table class="table table-striped table-hover">             
+            <thead class="thead-dark position-sticky top-0">                 
+                <tr>                     
+                    <th>@Html.DisplayNameFor(model => model.Table_Num)</th>                     
+                    <th>@Html.DisplayNameFor(model => model.Date)</th>                     
+                    <th>@Html.DisplayNameFor(model => model.Start)</th>                     
+                    <th>@Html.DisplayNameFor(model => model.End)</th>                     
+                    <th>@Html.DisplayNameFor(model => model.Playtime)</th>                     
+                    <th>@Html.DisplayNameFor(model => model.Fee)</th>                     
+                    <th>Actions</th>                 
+                </tr>             
+            </thead>             
+            <tbody>   
+                @foreach (var item in Model)                 
+                {                     
+                    <tr>                         
+                        <td>@Html.DisplayFor(modelItem => item.Table_Num)</td>                         
+                        <td>@Html.DisplayFor(modelItem => item.Date)</td>                         
+                        <td>@Html.DisplayFor(modelItem => item.Start)</td>                         
+                        <td>@Html.DisplayFor(modelItem => item.End)</td>                         
+                        <td>@Html.DisplayFor(modelItem => item.Playtime)</td>                         
+                        <td>@Html.DisplayFor(modelItem => item.Fee)</td>                         
+                        <td>                             
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-primary">Edit</a>                             
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Details</a>                             
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>                         
+                        </td>                     
+                    </tr>                 
+                }             
+            </tbody>             
+            <tfoot>                 
+                <tr>                     
+                    <td colspan="5" class="text-right"><strong>Total Fee:</strong></td>                     
+                    <td><strong>@ViewBag.TotalFee.ToString("C")</strong></td>                     
+                    <td></td>                 
+                </tr>             
+            </tfoot>         
+        </table>     
+    </div> 
 }
 else
 {

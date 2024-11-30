@@ -1,5 +1,7 @@
 "use strict";
 
+const activeTimers = new Map(); // 활성 타이머 관리를 위한 Map
+
 var connection = new signalR.HubConnectionBuilder().withUrl("/tablehub", {
     skipNegotiation: true,
     transport: signalR.HttpTransportType.WebSockets
@@ -16,7 +18,6 @@ connection.on("UpdateConnectionStatus", function (data) {
         data.connectedTables.forEach(tableId => updateTableUI(tableId, true));
     }
 });
-
 
 connection.on("UpdateTableStatus", function (tableId, isActive) {
     console.log(`Received table status update: Table ${tableId} is ${isActive ? 'active' : 'inactive'}`);
@@ -37,12 +38,10 @@ connection.on("GameEnded", function (tableId) {
 
 connection.on("ForceStartGame", function (tableId) {
     console.log(`Force start game signal received for table ${tableId}`);
-    // 여기서 태블릿에 강제 시작 신호를 보내는 로직을 구현할 수 있습니다.
 });
 
 connection.on("ForceEndGame", function (tableId) {
     console.log(`Force end game signal received for table ${tableId}`);
-    // 여기서 태블릿에 강제 종료 신호를 보내는 로직을 구현할 수 있습니다.
 });
 
 connection.start().then(function () {
@@ -58,30 +57,88 @@ connection.start().then(function () {
 document.addEventListener('DOMContentLoaded', updateAllTables);
 
 function updateGameList(tableId, games) {
-    var gameList = document.getElementById(`game-list-${tableId}`);
-    if (gameList) {
-        gameList.innerHTML = '';
-        games.forEach((game, index) => {
-            var listItem = document.createElement('li');
-            listItem.className = 'list-group-item';
-            listItem.innerHTML = `
-                <strong>Game ${index + 1}</strong><br>
-                시작: ${formatDate(game.start)}<br>
-                종료: ${game.finished ? formatDate(game.end) : '진행 중'}<br>
-                요금: $${game.fee.toFixed(2)}<br>
-                <button class="btn btn-sm btn-primary mt-2" onclick="editGame(${game.id})">Edit</button>
-                <button class="btn btn-sm btn-success mt-2 ml-2" onclick="saveGame(${game.id}, ${tableId})">Save</button>
-                <button class="btn btn-sm btn-danger mt-2 ml-2" onclick="deleteGame(${game.id}, ${tableId})">Delete</button>
-            `;
-            gameList.appendChild(listItem);
+    // 먼저 현재 설정된 요금을 가져옵니다
+    fetch('/Settings/GetFeePerMinute')
+        .then(response => response.json())
+        .then(data => {
+            const feePerMinute = data.feePerMinute;
+            updateGameListUI(tableId, games, feePerMinute);
+        })
+        .catch(error => {
+            console.error('Error fetching fee per minute:', error);
+            // 오류 시 기본값으로 진행
+            updateGameListUI(tableId, games, 0.5);
         });
-        
-        var saveAllButton = document.createElement('button');
-        saveAllButton.className = 'btn btn-info mt-3';
-        saveAllButton.textContent = 'Save All';
-        saveAllButton.onclick = () => saveAllGames(tableId);
-        gameList.appendChild(saveAllButton);
+}
+
+// UI 업데이트를 별도 함수로 분리
+function updateGameListUI(tableId, games, feePerMinute) {
+    var gameList = document.getElementById(`game-list-${tableId}`);
+    if (!gameList) return;
+
+    // 이전 타이머들 정리
+    if (activeTimers.has(tableId)) {
+        activeTimers.get(tableId).forEach(timer => clearInterval(timer));
+        activeTimers.delete(tableId);
     }
+
+    gameList.innerHTML = '';
+    const tableTimers = new Set();
+
+    games.forEach((game, index) => {
+        var listItem = document.createElement('li');
+        listItem.className = 'list-group-item';
+        const timerId = `timer-${tableId}-${game.id}`;
+
+        const isOngoing = !game.finished;
+        const timerHtml = isOngoing ? 
+            `<div id="${timerId}" class="alert alert-info mt-2">진행시간: 계산중...</div>` : '';
+
+        listItem.innerHTML = `
+            <strong>Game ${index + 1}</strong><br>
+            시작: ${formatDate(game.start)}<br>
+            종료: ${game.finished ? formatDate(game.end) : '진행 중'}<br>
+            ${timerHtml}
+            요금: $${game.fee.toFixed(2)}<br>
+            <button class="btn btn-sm btn-primary mt-2" onclick="editGame(${game.id})">Edit</button>
+            <button class="btn btn-sm btn-success mt-2 ml-2" onclick="saveGame(${game.id}, ${tableId})">Save</button>
+            <button class="btn btn-sm btn-danger mt-2 ml-2" onclick="deleteGame(${game.id}, ${tableId})">Delete</button>
+        `;
+        gameList.appendChild(listItem);
+
+        if (isOngoing) {
+            const startTime = new Date(game.start);
+            const timerElement = document.getElementById(timerId);
+
+            function updateTimer() {
+                const now = new Date();
+                const diffInMinutes = Math.floor((now - startTime) / (1000 * 60));
+                const diffInSeconds = Math.floor((now - startTime) / 1000);
+                const hours = Math.floor(diffInSeconds / 3600);
+                const minutes = Math.floor((diffInSeconds % 3600) / 60);
+                const seconds = diffInSeconds % 60;
+
+                timerElement.innerHTML = `
+                    진행시간: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}
+                    (${diffInMinutes}분, 요금: $${(diffInMinutes * feePerMinute).toFixed(2)})
+                `;
+            }
+
+            updateTimer();
+            const timer = setInterval(updateTimer, 1000);
+            tableTimers.add(timer);
+        }
+    });
+    
+    if (tableTimers.size > 0) {
+        activeTimers.set(tableId, tableTimers);
+    }
+
+    var saveAllButton = document.createElement('button');
+    saveAllButton.className = 'btn btn-info mt-3';
+    saveAllButton.textContent = 'Save All';
+    saveAllButton.onclick = () => saveAllGames(tableId);
+    gameList.appendChild(saveAllButton);
 }
 
 function getGameList(tableId) {
@@ -123,8 +180,10 @@ function saveGame(gameId, tableId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Game saved successfully.');
+            // 전체 테이블 업데이트 대신 해당 테이블만 업데이트
             getGameList(tableId);
+            // alert은 한 번만 표시
+            alert('Game saved successfully.');
         } else {
             alert('Failed to save game: ' + data.message);
         }
@@ -132,10 +191,8 @@ function saveGame(gameId, tableId) {
     .catch(error => console.error('Error:', error));
 }
 
-
 function editGame(gameId) {
     window.open(`/Games/Edit/${gameId}`, 'EditGame', 'width=600,height=400');
-    // 팝업 창이 닫힐 때 이벤트를 감지합니다.
 }
 
 function deleteGame(gameId, tableId) {
@@ -156,26 +213,39 @@ function deleteGame(gameId, tableId) {
     }
 }
 
-function saveAllGames(tableId) {
-    if (confirm('Are you sure you want to move all games to records?')) {
 
-        console.log("save all games in table " + tableId);
-        fetch(`/Games/MoveAllGamesToRecords/${tableId}`, {
-            method: 'POST',
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('All games moved to records successfully.');
-                getGameList(tableId);
-            } else {
-                alert('Failed to move games to records: ' + data.message);
+async function saveAllGames(tableId) {
+    try {
+        if (!confirm('Are you sure you want to move all games to records?')) {
+            return;
+        }
+
+        const response = await fetch(`/Games/MoveAllGamesToRecords/${tableId}`, {
+            method: 'POST'
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            // 게임 목록을 바로 비우고
+            const gameList = document.getElementById(`game-list-${tableId}`);
+            if (gameList) {
+                gameList.innerHTML = '';
+                // Save All 버튼만 다시 추가
+                const saveAllButton = document.createElement('button');
+                saveAllButton.className = 'btn btn-info mt-3';
+                saveAllButton.textContent = 'Save All';
+                saveAllButton.onclick = () => saveAllGames(tableId);
+                gameList.appendChild(saveAllButton);
             }
-        })
-        .catch(error => console.error('Error:', error));
+            // 한 번만 알림
+            alert('All games moved to records successfully.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to move games to records');
     }
 }
-
 
 function startGame(tableId) {
     fetch('/Games/StartGame', {
@@ -256,9 +326,25 @@ function forceEndGame(tableId) {
     })
     .catch(error => console.error('Error:', error));
 }
+
 function updateAllTables() {
+    // 이미 업데이트 중인지 확인하는 플래그 추가
+    if (window.isUpdating) return;
+    window.isUpdating = true;
+    
+    const promises = [];
     for (let i = 1; i <= 12; i++) {
-        getGameList(i);
+        promises.push(getGameList(i));
     }
+    
+    Promise.all(promises).finally(() => {
+        window.isUpdating = false;
+    });
 }
 
+// 페이지 언로드 시 모든 타이머 정리
+window.addEventListener('beforeunload', () => {
+    activeTimers.forEach(timers => {
+        timers.forEach(timer => clearInterval(timer));
+    });
+});

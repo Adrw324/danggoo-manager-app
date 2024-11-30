@@ -63,5 +63,12 @@ namespace DanggooManager.Controllers
         {
             return _context.Settings.Any(e => e.Id == id);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetFeePerMinute()
+        {
+            var settings = await _context.Settings.FirstOrDefaultAsync();
+            return Json(new { feePerMinute = settings?.FeePerMinute ?? 0.5m });
+        }
     }
 }

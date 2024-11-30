@@ -19,23 +19,22 @@ namespace DanggooManager.Controllers
             _context = context;
         }
 
-       // GET: Records
+        // GET: Records
         public async Task<IActionResult> Index(int? tableNum, int? year, int? month, DateTime? date)
         {
-            var records = from r in _context.Records
-                          select r;
+            var records = from r in _context.Records select r;
 
-            if (tableNum.HasValue)
+            if (tableNum.HasValue && tableNum.Value != 0)
             {
                 records = records.Where(r => r.Table_Num == tableNum.Value);
             }
 
-            if (year.HasValue)
+            if (year.HasValue && year.Value != 0)
             {
                 records = records.Where(r => r.Date.Year == year.Value);
             }
 
-            if (month.HasValue)
+            if (month.HasValue && month.Value != 0)
             {
                 records = records.Where(r => r.Date.Month == month.Value);
             }
@@ -45,11 +44,12 @@ namespace DanggooManager.Controllers
                 records = records.Where(r => r.Date.Date == date.Value.Date);
             }
 
-           var recordsList = await records.ToListAsync();
 
-           // Calculate total fee
-        decimal totalFee = recordsList.Sum(r => r.Fee);
-        ViewBag.TotalFee = totalFee;
+            var recordsList = await records.ToListAsync();
+
+            // Calculate total fee
+            decimal totalFee = recordsList.Sum(r => r.Fee);
+            ViewBag.TotalFee = totalFee;
 
             // 레코드가 있는지 확인
             if (recordsList.Any())
@@ -57,7 +57,7 @@ namespace DanggooManager.Controllers
                 ViewBag.TableNumbers = await _context.Records.Select(r => r.Table_Num).Distinct().OrderBy(t => t).ToListAsync();
                 ViewBag.Years = await _context.Records.Select(r => r.Date.Year).Distinct().OrderByDescending(y => y).ToListAsync();
                 ViewBag.Months = Enumerable.Range(1, 12).ToList();
-                
+
                 var minDate = recordsList.Min(r => r.Date);
                 var maxDate = recordsList.Max(r => r.Date);
                 ViewBag.MinDate = minDate.ToString("yyyy-MM-dd");
